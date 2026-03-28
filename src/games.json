@@ -1,58 +1,51 @@
 [
   {
-    "id": "slope",
-    "title": "Slope",
-    "category": "Action",
-    "thumbnail": "https://picsum.photos/seed/slope/400/250",
-    "url": "https://way78.github.io/slope/"
-  },
-  {
-    "id": "tunnel-rush",
-    "title": "Tunnel Rush",
-    "category": "Action",
-    "thumbnail": "https://picsum.photos/seed/tunnel/400/250",
-    "url": "https://way78.github.io/tunnel-rush/"
-  },
-  {
-    "id": "1v1-lol",
-    "title": "1v1.LOL",
-    "category": "Shooter",
-    "thumbnail": "https://picsum.photos/seed/1v1/400/250",
-    "url": "https://way78.github.io/1v1-lol/"
-  },
-  {
-    "id": "subway-surfers",
-    "title": "Subway Surfers",
+    "id": "snake",
+    "title": "Neon Snake",
     "category": "Arcade",
-    "thumbnail": "https://picsum.photos/seed/subway/400/250",
-    "url": "https://way78.github.io/subway-surfers/"
+    "thumbnail": "https://picsum.photos/seed/snake/400/250",
+    "type": "local"
   },
   {
-    "id": "retro-bowl",
-    "title": "Retro Bowl",
+    "id": "pong",
+    "title": "Cyber Pong",
     "category": "Sports",
-    "thumbnail": "https://picsum.photos/seed/retro/400/250",
-    "url": "https://way78.github.io/retro-bowl/"
+    "thumbnail": "https://picsum.photos/seed/pong/400/250",
+    "type": "local"
   },
   {
-    "id": "bitlife",
-    "title": "BitLife",
-    "category": "Simulation",
-    "thumbnail": "https://picsum.photos/seed/bitlife/400/250",
-    "url": "https://way78.github.io/bitlife/"
-  },
-  {
-    "id": "drive-mad",
-    "title": "Drive Mad",
-    "category": "Driving",
-    "thumbnail": "https://picsum.photos/seed/drive/400/250",
-    "url": "https://way78.github.io/drive-mad/"
-  },
-  {
-    "id": "geometry-dash",
-    "title": "Geometry Dash",
+    "id": "breakout",
+    "title": "Brick Breaker",
     "category": "Arcade",
-    "thumbnail": "https://picsum.photos/seed/geometry/400/250",
-    "url": "https://way78.github.io/geometry-dash/"
+    "thumbnail": "https://picsum.photos/seed/bricks/400/250",
+    "type": "local"
+  },
+  {
+    "id": "memory",
+    "title": "Memory Match",
+    "category": "Puzzle",
+    "thumbnail": "https://picsum.photos/seed/memory/400/250",
+    "type": "local"
+  },
+  {
+    "id": "whack",
+    "title": "Mole Hunter",
+    "category": "Action",
+    "thumbnail": "https://picsum.photos/seed/mole/400/250",
+    "type": "local"
+  },
+  {
+    "id": "clicker",
+    "title": "Cookie Clicker Mini",
+    "category": "Simulation",
+    "thumbnail": "https://picsum.photos/seed/cookie/400/250",
+    "type": "local"
+  },
+  {
+    "id": "jump",
+    "title": "Sky Jumper",
+    "category": "Arcade",
+    "thumbnail": "https://picsum.photos/seed/jump/400/250",
+    "type": "local"
   }
 ]

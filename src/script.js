@@ -35,6 +35,15 @@ function renderGames() {
         return matchesSearch && matchesCat;
     });
 
+    if (filtered.length === 0) {
+        grid.innerHTML = `
+            <div class="col-span-full text-center py-20">
+                <p class="text-white/40 text-lg italic">No games found.</p>
+            </div>
+        `;
+        return;
+    }
+
     grid.innerHTML = filtered.map(game => `
         <div onclick="openGame('${game.id}')" class="group cursor-pointer game-card">
             <div class="relative aspect-[4/3] rounded-2xl overflow-hidden border border-white/10 mb-3">
@@ -64,7 +73,20 @@ function openGame(id) {
     
     document.getElementById('current-game-title').innerText = game.title;
     document.getElementById('current-game-category').innerText = game.category;
-    document.getElementById('game-iframe').src = game.url;
+    
+    const iframe = document.getElementById('game-iframe');
+    const playerContainer = iframe.parentElement;
+
+    if (game.type === 'local') {
+        iframe.classList.add('hidden');
+        GameEngine.init(playerContainer.id, game.id);
+    } else {
+        iframe.classList.remove('hidden');
+        // Clear any canvas left by local games
+        const canvas = document.getElementById('gameCanvas');
+        if (canvas) canvas.remove();
+        iframe.src = game.url;
+    }
     
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -73,6 +95,7 @@ function closeGame() {
     document.getElementById('home-content').classList.remove('hidden');
     document.getElementById('game-player').classList.add('hidden');
     document.getElementById('game-iframe').src = '';
+    GameEngine.stop();
 }
 
 function toggleFullscreen() {
@@ -82,8 +105,23 @@ function toggleFullscreen() {
     else if (iframe.msRequestFullscreen) iframe.msRequestFullscreen();
 }
 
+// Debounce function to limit how often a function is called
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+const debouncedRenderGames = debounce(renderGames, 300);
+
 // Search listener
-document.getElementById('search-input').addEventListener('input', renderGames);
+document.getElementById('search-input').addEventListener('input', debouncedRenderGames);
 
 // Init
 loadGames();
