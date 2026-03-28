@@ -180,7 +180,7 @@ export default function App() {
                   animate={{ scale: 1, opacity: 1 }}
                   className="text-5xl md:text-7xl font-display font-black tracking-tighter"
                 >
-                  Games by <span className="text-blue-500">Sylis</span>
+                  Freedom <span className="text-blue-500">at last</span>
                 </motion.h2>
                 <p className="text-white/60 max-w-2xl mx-auto text-lg">
                   Freedom V2 is your ultimate destination for high-quality, unblocked web games. 
@@ -269,7 +269,7 @@ export default function App() {
               </h1>
             </div>
             <p className="text-sm text-white/40 leading-relaxed">
-              The next generation of unblocked gaming. Experience freedom without limits.
+              aaron is a fuckass opp
             </p>
           </div>
           <div>
