@@ -1,10 +1,16 @@
-const GameEngine = {
+export const GameEngine = {
     intervals: [],
     timeouts: [],
     animations: [],
     running: false,
     canvas: null,
     ctx: null,
+    activeGame: null,
+    containerId: null,
+    currentGameData: {
+        score: 0,
+        state: {}
+    },
     deaths: {
         snake: 0,
         pong: 0,
@@ -19,6 +25,23 @@ const GameEngine = {
             return true;
         }
         return false;
+    },
+
+    getCurrentData() {
+        return {
+            gameId: this.activeGame,
+            score: this.currentGameData.score,
+            state: this.currentGameData.state
+        };
+    },
+
+    loadData(gameId, data) {
+        if (!data) return;
+        if (gameId === 'clicker') {
+            // Special handling for clicker state
+            this.clickerState = data.state;
+        }
+        // For other games, we mostly just care about high scores which are already handled
     },
 
     drawUI(gameId, score) {
@@ -37,6 +60,9 @@ const GameEngine = {
     init(containerId, gameId) {
         this.stop();
         this.running = true;
+        this.activeGame = gameId;
+        this.containerId = containerId;
+        this.currentGameData = { score: 0, state: {} };
         const container = document.getElementById(containerId);
         if (!container) return;
         container.innerHTML = '<canvas id="gameCanvas" width="800" height="450" class="w-full h-full bg-black rounded-xl"></canvas>';
@@ -65,6 +91,14 @@ const GameEngine = {
 
         const overlay = document.getElementById('game-over-overlay');
         if (overlay) overlay.remove();
+        
+        if (this.containerId) {
+            const container = document.getElementById(this.containerId);
+            if (container) container.innerHTML = '';
+        }
+        
+        this.activeGame = null;
+        this.containerId = null;
     },
 
     drawDeaths(gameId) {
@@ -273,6 +307,7 @@ const GameEngine = {
                 snake.unshift(head);
                 if (head.x === food.x && head.y === Math.floor(food.y)) {
                     score += 10;
+                    this.currentGameData.score = score;
                     speed = Math.max(50, 100 - Math.floor(score / 50) * 5);
                     food = {x: Math.floor(Math.random() * 40), y: Math.floor(Math.random() * 22)};
                 } else {
@@ -368,7 +403,7 @@ const GameEngine = {
             }
 
             if (bx < 0) { this.deaths.pong++; s2++; bx = 400; bdx = 5; bdy = 5; }
-            if (bx > 800) { s1++; bx = 400; bdx = -5; bdy = 5; }
+            if (bx > 800) { s1++; this.currentGameData.score = s1; bx = 400; bdx = -5; bdy = 5; }
 
             if (s1 >= 5 || s2 >= 5) {
                 const isNewBest = this.saveHighScore('pong', s1);
@@ -465,6 +500,7 @@ const GameEngine = {
             bricks.forEach(b => {
                 if (b.s && x > b.x && x < b.x + 70 && y > b.y && y < b.y + 20) {
                     dy *= -1; b.s = 0;
+                    this.currentGameData.score = bricks.filter(br => !br.s).length * 10;
                 }
             });
 
@@ -552,12 +588,13 @@ const GameEngine = {
                 if (flipped[0].s === flipped[1].s) {
                     matched.push(flipped[0].i, flipped[1].i);
                     document.getElementById('match-count').innerText = matched.length / 2;
+                    const score = Math.max(0, 1000 - moves * 10);
+                    this.currentGameData.score = score;
                     const f1 = document.getElementById(`card-${flipped[0].i}`);
                     const f2 = document.getElementById(`card-${flipped[1].i}`);
                     f1.classList.replace('bg-blue-600/20', 'bg-green-600/20');
                     f2.classList.replace('bg-blue-600/20', 'bg-green-600/20');
                     flipped = [];
-                    const score = Math.max(0, 1000 - moves * 10);
                     const isNewBest = this.saveHighScore('memory', score);
                     if (matched.length === cards.length) {
                         this.timeouts.push(setTimeout(() => this.showGameOver('memory', score, isNewBest), 500));
@@ -649,6 +686,7 @@ const GameEngine = {
                 else if (moleType === 'bomb') score = Math.max(0, score - 30);
                 else score += 10;
                 
+                this.currentGameData.score = score;
                 const scoreEl = document.getElementById('mole-score');
                 if (scoreEl) scoreEl.innerText = score;
                 
@@ -664,7 +702,16 @@ const GameEngine = {
         const canvas = document.getElementById('gameCanvas');
         if (!canvas || !canvas.parentElement) return;
         const container = canvas.parentElement;
+        
         let cookies = 0, autoRate = 0, multiplier = 1;
+        
+        // Load state if available
+        if (this.clickerState) {
+            cookies = this.clickerState.cookies || 0;
+            autoRate = this.clickerState.autoRate || 0;
+            multiplier = this.clickerState.multiplier || 1;
+            this.clickerState = null; // Clear after use
+        }
 
         container.innerHTML = `
             <div class="bg-black rounded-xl h-full flex p-8 gap-8">
@@ -732,6 +779,9 @@ const GameEngine = {
 
         this.updateDisplay = () => {
             this.saveHighScore('clicker', Math.floor(cookies));
+            this.currentGameData.score = Math.floor(cookies);
+            this.currentGameData.state = { cookies, autoRate, multiplier };
+            
             const countEl = document.getElementById('cookie-count');
             if (countEl) countEl.innerText = Math.floor(cookies);
             const rateEl = document.getElementById('rate-display');
@@ -785,6 +835,7 @@ const GameEngine = {
                     pdy = p.type === 'spring' ? -22 : -12;
                     if (p.type === 'spring') score += 50;
                     else score += 10;
+                    this.currentGameData.score = score;
                 }
             });
 

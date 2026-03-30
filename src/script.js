@@ -1,5 +1,9 @@
+import { auth, signIn, logout, db, onAuthStateChanged, doc, setDoc, getDoc, serverTimestamp } from './firebase.js';
+import { GameEngine } from './games.js';
+
 let allGames = [];
 let currentCategory = 'All';
+let currentUser = null;
 
 // Load games from JSON
 async function loadGames() {
@@ -15,6 +19,7 @@ async function loadGames() {
 
 function renderCategories() {
     const container = document.getElementById('category-filters');
+    if (!container) return;
     const categories = ['All', ...new Set(allGames.map(g => g.category))];
     
     container.innerHTML = categories.map(cat => `
@@ -27,6 +32,7 @@ function renderCategories() {
 
 function renderGames() {
     const grid = document.getElementById('games-grid');
+    if (!grid) return;
     const searchTerm = document.getElementById('search-input').value.toLowerCase();
     
     const filtered = allGames.filter(game => {
@@ -64,7 +70,7 @@ function filterByCategory(cat) {
     renderGames();
 }
 
-function openGame(id) {
+async function openGame(id) {
     const game = allGames.find(g => g.id === id);
     if (!game) return;
 
@@ -78,16 +84,36 @@ function openGame(id) {
     document.getElementById('current-game-category').innerText = game.category;
     
     const iframe = document.getElementById('game-iframe');
-    if (!iframe) return;
-    const playerContainer = iframe.parentElement;
-    if (!playerContainer) return;
+    const localHolder = document.getElementById('local-game-holder');
+    if (!iframe || !localHolder) return;
+
+    // Show save button if logged in
+    const saveBtn = document.getElementById('save-game-btn');
+    if (saveBtn) {
+        saveBtn.classList.toggle('hidden', !currentUser);
+    }
 
     if (game.type === 'local') {
         iframe.classList.add('hidden');
         iframe.src = ''; // Clear iframe to stop any background processes
-        GameEngine.init(playerContainer.id, game.id);
+        localHolder.classList.remove('hidden');
+        
+        // Try to load saved data if logged in
+        if (currentUser) {
+            try {
+                const saveDoc = await getDoc(doc(db, 'gameSaves', `${currentUser.uid}_${game.id}`));
+                if (saveDoc.exists()) {
+                    GameEngine.loadData(game.id, saveDoc.data());
+                }
+            } catch (err) {
+                console.error('Error loading game save:', err);
+            }
+        }
+        
+        GameEngine.init('local-game-holder', game.id);
     } else {
         iframe.classList.remove('hidden');
+        localHolder.classList.add('hidden');
         // Clear any canvas left by local games
         const canvas = document.getElementById('gameCanvas');
         if (canvas) canvas.remove();
@@ -101,10 +127,12 @@ function closeGame() {
     const homeContent = document.getElementById('home-content');
     const gamePlayer = document.getElementById('game-player');
     const iframe = document.getElementById('game-iframe');
+    const localHolder = document.getElementById('local-game-holder');
 
     if (homeContent) homeContent.classList.remove('hidden');
     if (gamePlayer) gamePlayer.classList.add('hidden');
     if (iframe) iframe.src = '';
+    if (localHolder) localHolder.classList.add('hidden');
     GameEngine.stop();
 }
 
@@ -114,6 +142,98 @@ function toggleFullscreen() {
     else if (iframe.webkitRequestFullscreen) iframe.webkitRequestFullscreen();
     else if (iframe.msRequestFullscreen) iframe.msRequestFullscreen();
 }
+
+// Firebase Handlers
+async function handleSignIn() {
+    try {
+        await signIn();
+    } catch (error) {
+        console.error('Sign in error:', error);
+    }
+}
+
+async function handleLogout() {
+    try {
+        await logout();
+    } catch (error) {
+        console.error('Logout error:', error);
+    }
+}
+
+async function saveCurrentGame() {
+    if (!currentUser) return;
+    
+    const data = GameEngine.getCurrentData();
+    if (!data.gameId) return;
+
+    const saveBtn = document.getElementById('save-game-btn');
+    const originalText = saveBtn.innerHTML;
+    saveBtn.innerHTML = 'Saving...';
+    saveBtn.disabled = true;
+
+    try {
+        await setDoc(doc(db, 'gameSaves', `${currentUser.uid}_${data.gameId}`), {
+            userId: currentUser.uid,
+            gameId: data.gameId,
+            score: data.score,
+            state: data.state,
+            updatedAt: serverTimestamp()
+        });
+        
+        saveBtn.innerHTML = 'Saved!';
+        setTimeout(() => {
+            saveBtn.innerHTML = originalText;
+            saveBtn.disabled = false;
+        }, 2000);
+    } catch (error) {
+        console.error('Error saving game:', error);
+        saveBtn.innerHTML = 'Error!';
+        setTimeout(() => {
+            saveBtn.innerHTML = originalText;
+            saveBtn.disabled = false;
+        }, 2000);
+    }
+}
+
+// Auth state listener
+onAuthStateChanged(auth, async (user) => {
+    currentUser = user;
+    const loginBtn = document.getElementById('login-btn');
+    const userProfile = document.getElementById('user-profile');
+    const userAvatar = document.getElementById('user-avatar');
+    const saveBtn = document.getElementById('save-game-btn');
+
+    if (user) {
+        if (loginBtn) loginBtn.classList.add('hidden');
+        if (userProfile) userProfile.classList.remove('hidden');
+        if (userAvatar) userAvatar.src = user.photoURL || `https://ui-avatars.com/api/?name=${user.email}`;
+        
+        // Update user profile in Firestore
+        await setDoc(doc(db, 'users', user.uid), {
+            displayName: user.displayName,
+            email: user.email,
+            photoURL: user.photoURL,
+            lastLogin: serverTimestamp()
+        }, { merge: true });
+
+    } else {
+        if (loginBtn) loginBtn.classList.remove('hidden');
+        if (userProfile) userProfile.classList.add('hidden');
+    }
+    
+    if (saveBtn) {
+        saveBtn.classList.toggle('hidden', !user);
+    }
+});
+
+// Attach to window for HTML onclick handlers
+window.filterByCategory = filterByCategory;
+window.openGame = openGame;
+window.closeGame = closeGame;
+window.toggleFullscreen = toggleFullscreen;
+window.handleSignIn = handleSignIn;
+window.handleLogout = handleLogout;
+window.saveCurrentGame = saveCurrentGame;
 
 // Debounce function to limit how often a function is called
 function debounce(func, wait) {
