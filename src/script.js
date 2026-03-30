@@ -68,6 +68,9 @@ function openGame(id) {
     const game = allGames.find(g => g.id === id);
     if (!game) return;
 
+    // Stop any running local game
+    GameEngine.stop();
+
     document.getElementById('home-content').classList.add('hidden');
     document.getElementById('game-player').classList.remove('hidden');
     
@@ -75,10 +78,13 @@ function openGame(id) {
     document.getElementById('current-game-category').innerText = game.category;
     
     const iframe = document.getElementById('game-iframe');
+    if (!iframe) return;
     const playerContainer = iframe.parentElement;
+    if (!playerContainer) return;
 
     if (game.type === 'local') {
         iframe.classList.add('hidden');
+        iframe.src = ''; // Clear iframe to stop any background processes
         GameEngine.init(playerContainer.id, game.id);
     } else {
         iframe.classList.remove('hidden');
@@ -92,9 +98,13 @@ function openGame(id) {
 }
 
 function closeGame() {
-    document.getElementById('home-content').classList.remove('hidden');
-    document.getElementById('game-player').classList.add('hidden');
-    document.getElementById('game-iframe').src = '';
+    const homeContent = document.getElementById('home-content');
+    const gamePlayer = document.getElementById('game-player');
+    const iframe = document.getElementById('game-iframe');
+
+    if (homeContent) homeContent.classList.remove('hidden');
+    if (gamePlayer) gamePlayer.classList.add('hidden');
+    if (iframe) iframe.src = '';
     GameEngine.stop();
 }
 
@@ -121,7 +131,10 @@ function debounce(func, wait) {
 const debouncedRenderGames = debounce(renderGames, 300);
 
 // Search listener
-document.getElementById('search-input').addEventListener('input', debouncedRenderGames);
+const searchInput = document.getElementById('search-input');
+if (searchInput) {
+    searchInput.addEventListener('input', debouncedRenderGames);
+}
 
 // Init
 loadGames();
